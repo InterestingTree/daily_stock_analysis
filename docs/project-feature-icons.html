@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>股票智能分析系统功能图标速览</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --ink: #182032;
+      --muted: #657188;
+      --line: #d8dfeb;
+      --card: #ffffff;
+      --blue: #2563eb;
+      --green: #0f9f6e;
+      --red: #e5484d;
+      --amber: #c77700;
+      --violet: #7657d8;
+      --teal: #07848f;
+      --shadow: 0 14px 36px rgba(24, 32, 50, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.08), transparent 34%),
+        linear-gradient(180deg, #fbfcff 0%, var(--bg) 46%, #eef3f8 100%);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 42px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: end;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 820px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .badge {
+      display: inline-grid;
+      place-items: center;
+      min-width: 136px;
+      min-height: 136px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .badge strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 18px;
+    }
+
+    .section-title {
+      margin: 34px 0 16px;
+      font-size: 22px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .flow-step,
+    .card,
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .flow-step {
+      position: relative;
+      padding: 18px 16px;
+      min-height: 154px;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -13px;
+      z-index: 2;
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--blue);
+      text-align: center;
+      line-height: 21px;
+      font-weight: 800;
+    }
+
+    .icon {
+      width: 46px;
+      height: 46px;
+      margin-bottom: 12px;
+    }
+
+    .icon.small {
+      width: 40px;
+      height: 40px;
+    }
+
+    .flow-step h2,
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .flow-step p,
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-height: 168px;
+      padding: 18px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #46546b;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .note {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 16px;
+      padding: 20px;
+    }
+
+    .note h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .note ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .note li {
+      margin: 5px 0;
+    }
+
+    @media (max-width: 940px) {
+      .hero,
+      .note {
+        grid-template-columns: 1fr;
+      }
+
+      .flow,
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow-step:not(:last-child)::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main {
+        width: min(100vw - 24px, 1180px);
+        padding-top: 24px;
+      }
+
+      .flow,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .badge {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div>
+        <h1>股票智能分析系统</h1>
+        <p class="lead">把 A 股、港股、美股等多市场数据接入 AI 分析链路，生成决策报告，并通过 Web、桌面、Bot、API 和通知渠道交付给用户。</p>
+      </div>
+      <div class="badge" aria-label="项目定位">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="AI 股票分析">
+          <rect x="8" y="34" width="8" height="18" rx="2" fill="var(--green)"/>
+          <rect x="22" y="24" width="8" height="28" rx="2" fill="var(--blue)"/>
+          <rect x="36" y="16" width="8" height="36" rx="2" fill="var(--violet)"/>
+          <path d="M10 24l10-8 11 7 14-14 9 7" fill="none" stroke="var(--red)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="49" cy="16" r="4" fill="var(--amber)"/>
+        </svg>
+        <strong>AI + 行情 + 决策</strong>
+      </div>
+    </section>
+
+    <h2 class="section-title">主流程一眼看懂</h2>
+    <section class="flow" aria-label="主流程">
+      <article class="flow-step">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="输入股票">
+          <rect x="10" y="12" width="44" height="40" rx="7" fill="#e8f1ff" stroke="var(--blue)" stroke-width="3"/>
+          <path d="M20 42h24M20 32h24M20 22h12" stroke="var(--blue)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h2>输入标的</h2>
+        <p>自选股、手动输入、图片、CSV/Excel、剪贴板和搜索补全。</p>
+      </article>
+
+      <article class="flow-step">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="抓取数据">
+          <path d="M12 44c9-20 31-20 40 0" fill="none" stroke="var(--teal)" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="32" cy="28" r="15" fill="#e7fbfb" stroke="var(--teal)" stroke-width="3"/>
+          <path d="M21 29h22M32 17c5 7 5 15 0 22M32 17c-5 7-5 15 0 22" stroke="var(--teal)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+        <h2>聚合数据</h2>
+        <p>行情、K 线、技术指标、资金流、筹码、新闻、公告和基本面。</p>
+      </article>
+
+      <article class="flow-step">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="AI 分析">
+          <rect x="14" y="16" width="36" height="34" rx="8" fill="#f0edff" stroke="var(--violet)" stroke-width="3"/>
+          <circle cx="26" cy="31" r="3" fill="var(--violet)"/>
+          <circle cx="38" cy="31" r="3" fill="var(--violet)"/>
+          <path d="M25 41h14M32 8v8M32 50v6M8 33h6M50 33h6" stroke="var(--violet)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h2>AI 研判</h2>
+        <p>大模型、Agent 策略、市场阶段、风险护栏和上下文包共同生成判断。</p>
+      </article>
+
+      <article class="flow-step">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="生成报告">
+          <rect x="14" y="8" width="36" height="48" rx="5" fill="#fff6df" stroke="var(--amber)" stroke-width="3"/>
+          <path d="M22 24h20M22 34h20M22 44h12" stroke="var(--amber)" stroke-width="4" stroke-linecap="round"/>
+          <path d="M40 8v12h10" fill="none" stroke="var(--amber)" stroke-width="3"/>
+        </svg>
+        <h2>生成报告</h2>
+        <p>决策仪表盘、大盘复盘、评分、买卖建议、风险、催化和检查清单。</p>
+      </article>
+
+      <article class="flow-step">
+        <svg class="icon" viewBox="0 0 64 64" role="img" aria-label="多端交付">
+          <path d="M10 20h44v26H10z" fill="#eaf8f2" stroke="var(--green)" stroke-width="3" rx="5"/>
+          <path d="M22 54h20M32 46v8M18 29h28M18 37h18" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h2>交付使用</h2>
+        <p>Web/桌面工作台、Bot、API、定时任务和多渠道通知。</p>
+      </article>
+    </section>
+
+    <h2 class="section-title">关键功能图标</h2>
+    <section class="grid" aria-label="关键功能">
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="多市场">
+          <circle cx="32" cy="32" r="22" fill="#e8f1ff" stroke="var(--blue)" stroke-width="3"/>
+          <path d="M10 32h44M32 10c8 9 8 35 0 44M32 10c-8 9-8 35 0 44" stroke="var(--blue)" stroke-width="3" fill="none"/>
+        </svg>
+        <h3>多市场覆盖</h3>
+        <p>A 股、港股、美股、ETF，并扩展日股、韩股的基础行情和技术分析。</p>
+        <div class="tag-row"><span class="tag">CN</span><span class="tag">HK</span><span class="tag">US</span><span class="tag">JP/KR</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="数据源">
+          <path d="M16 18c0-6 32-6 32 0v28c0 6-32 6-32 0z" fill="#e7fbfb" stroke="var(--teal)" stroke-width="3"/>
+          <path d="M16 18c0 6 32 6 32 0M16 32c0 6 32 6 32 0" stroke="var(--teal)" stroke-width="3" fill="none"/>
+        </svg>
+        <h3>多源数据聚合</h3>
+        <p>TickFlow、AkShare、Tushare、YFinance、Longbridge 等数据源带 fallback。</p>
+        <div class="tag-row"><span class="tag">行情</span><span class="tag">技术</span><span class="tag">新闻</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="AI 模型">
+          <rect x="12" y="12" width="40" height="40" rx="9" fill="#f0edff" stroke="var(--violet)" stroke-width="3"/>
+          <path d="M22 34l7 7 14-18" stroke="var(--violet)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <h3>AI 决策报告</h3>
+        <p>用大模型生成结论、评分、趋势、点位、风险警报和操作检查清单。</p>
+        <div class="tag-row"><span class="tag">LLM</span><span class="tag">评分</span><span class="tag">风控</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="Agent">
+          <path d="M18 16h28a8 8 0 0 1 8 8v16a8 8 0 0 1-8 8H29l-11 8v-8a8 8 0 0 1-8-8V24a8 8 0 0 1 8-8z" fill="#fff6df" stroke="var(--amber)" stroke-width="3"/>
+          <path d="M22 29h20M22 38h13" stroke="var(--amber)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h3>Agent 策略问股</h3>
+        <p>多轮追问，内置均线、缠论、波浪、趋势、热点、事件和成长策略。</p>
+        <div class="tag-row"><span class="tag">问股</span><span class="tag">策略</span><span class="tag">研究</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="Web 桌面">
+          <rect x="8" y="14" width="48" height="34" rx="5" fill="#eaf8f2" stroke="var(--green)" stroke-width="3"/>
+          <path d="M20 56h24M32 48v8M18 26h28M18 36h18" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h3>Web / 桌面工作台</h3>
+        <p>手动分析、任务进度、历史报告、Markdown、配置管理、主题切换。</p>
+        <div class="tag-row"><span class="tag">WebUI</span><span class="tag">Electron</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="导入识别">
+          <rect x="12" y="12" width="40" height="40" rx="6" fill="#e8f1ff" stroke="var(--blue)" stroke-width="3"/>
+          <circle cx="25" cy="26" r="5" fill="var(--blue)"/>
+          <path d="M18 44l11-10 8 7 6-5 5 8" stroke="var(--blue)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>智能导入</h3>
+        <p>从图片、CSV/Excel 和剪贴板识别股票，并支持代码、名称、拼音补全。</p>
+        <div class="tag-row"><span class="tag">图片</span><span class="tag">表格</span><span class="tag">补全</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="推送">
+          <path d="M12 34l40-20-10 38-10-15-12 9z" fill="#fff0f0" stroke="var(--red)" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M32 37l20-23" stroke="var(--red)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <h3>自动推送</h3>
+        <p>企业微信、飞书、Telegram、Discord、Slack、邮件等渠道发送报告。</p>
+        <div class="tag-row"><span class="tag">IM</span><span class="tag">邮件</span><span class="tag">Webhook</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="告警">
+          <path d="M32 8l24 42H8z" fill="#fff6df" stroke="var(--amber)" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M32 22v13M32 43h.1" stroke="var(--amber)" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <h3>实时告警中心</h3>
+        <p>规则管理、触发历史、通知尝试、冷却状态和市场/持仓范围监控。</p>
+        <div class="tag-row"><span class="tag">Alert</span><span class="tag">Rule</span><span class="tag">Monitor</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="回测">
+          <rect x="10" y="12" width="44" height="40" rx="6" fill="#f0edff" stroke="var(--violet)" stroke-width="3"/>
+          <path d="M18 41l9-11 8 6 11-15" stroke="var(--violet)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <h3>回测与验证</h3>
+        <p>通过回测页面和策略摘要，辅助验证策略规则、信号质量和历史表现。</p>
+        <div class="tag-row"><span class="tag">Backtest</span><span class="tag">Signal</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="持仓">
+          <rect x="12" y="18" width="40" height="30" rx="6" fill="#eaf8f2" stroke="var(--green)" stroke-width="3"/>
+          <path d="M22 18v-5h20v5M22 34h20" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h3>持仓管理</h3>
+        <p>维护账户、仓位、成本和持仓上下文，让分析能结合真实持仓风险。</p>
+        <div class="tag-row"><span class="tag">Portfolio</span><span class="tag">仓位</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="自动化">
+          <circle cx="32" cy="32" r="22" fill="#e7fbfb" stroke="var(--teal)" stroke-width="3"/>
+          <path d="M32 18v15l10 7" stroke="var(--teal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>自动化运行</h3>
+        <p>支持 GitHub Actions、Docker、本地定时、FastAPI 服务和命令行调度。</p>
+        <div class="tag-row"><span class="tag">Schedule</span><span class="tag">Docker</span><span class="tag">API</span></div>
+      </article>
+
+      <article class="card">
+        <svg class="icon small" viewBox="0 0 64 64" role="img" aria-label="Bot API">
+          <path d="M18 18h28a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H35l-11 9v-9h-6a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8z" fill="#e8f1ff" stroke="var(--blue)" stroke-width="3"/>
+          <path d="M23 31h18M23 39h10" stroke="var(--blue)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h3>Bot / API 接入</h3>
+        <p>FastAPI 暴露分析、历史、配置、Agent、告警、持仓等能力给多端使用。</p>
+        <div class="tag-row"><span class="tag">FastAPI</span><span class="tag">Bot</span><span class="tag">SSE</span></div>
+      </article>
+    </section>
+
+    <h2 class="section-title">读项目时的抓手</h2>
+    <section class="note" aria-label="项目入口与目录">
+      <div>
+        <h3>关键入口</h3>
+        <ul>
+          <li><code>main.py</code>：CLI、调度、分析任务主入口。</li>
+          <li><code>api/</code>：FastAPI 服务和 Web/Bot 所需接口。</li>
+          <li><code>apps/dsa-web/</code>：Web 工作台。</li>
+          <li><code>apps/dsa-desktop/</code>：Electron 桌面端。</li>
+        </ul>
+      </div>
+      <div>
+        <h3>核心目录</h3>
+        <ul>
+          <li><code>src/core/</code>：分析主流程与大盘复盘。</li>
+          <li><code>data_provider/</code>：行情与金融数据适配。</li>
+          <li><code>src/agent/</code>：策略问股与研究 Agent。</li>
+          <li><code>src/notification_sender/</code>：通知渠道发送器。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

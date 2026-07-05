@@ -177,3 +177,39 @@ class StockAnalyzerBiasTestCase(unittest.TestCase):
         # else: risks.append 严禁追高 - so we get 严禁追高
         # Because 5.0 is not < 5.0, not > 5.0 when effective=base=5. So we hit the else.
         self._assert_contains(result.risk_factors, "严禁追高")
+
+    @patch("src.stock_analyzer.get_config")
+    def test_macd_positive_bar_shrinking_reduces_score(self, mock_get_config: MagicMock) -> None:
+        """Positive but shrinking MACD bars should lower confidence versus expanding bars."""
+        mock_get_config.return_value.bias_threshold = 5.0
+        expanding = _make_result(macd_status=MACDStatus.BULLISH)
+        expanding.macd_bar = 0.20
+        expanding.macd_momentum = 0.05
+        shrinking = _make_result(macd_status=MACDStatus.BULLISH)
+        shrinking.macd_bar = 0.20
+        shrinking.macd_momentum = -0.05
+
+        self.analyzer._generate_signal(expanding)
+        self.analyzer._generate_signal(shrinking)
+
+        self.assertGreater(expanding.signal_score, shrinking.signal_score)
+        self._assert_contains(shrinking.risk_factors, "红柱收缩")
+
+    @patch("src.stock_analyzer.get_config")
+    def test_bear_trend_oversold_rsi_is_not_treated_as_best_buy(self, mock_get_config: MagicMock) -> None:
+        """RSI oversold in a bear trend should be risk-aware, not scored as a top buy setup."""
+        mock_get_config.return_value.bias_threshold = 5.0
+        bear_oversold = _make_result(
+            trend_status=TrendStatus.BEAR,
+            rsi_status=RSIStatus.OVERSOLD,
+        )
+        bull_oversold = _make_result(
+            trend_status=TrendStatus.BULL,
+            rsi_status=RSIStatus.OVERSOLD,
+        )
+
+        self.analyzer._generate_signal(bear_oversold)
+        self.analyzer._generate_signal(bull_oversold)
+
+        self.assertLess(bear_oversold.signal_score, bull_oversold.signal_score)
+        self._assert_contains(bear_oversold.risk_factors, "下跌中继")

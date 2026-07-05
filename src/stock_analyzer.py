@@ -88,6 +88,9 @@ class TrendAnalysisResult:
     trend_status: TrendStatus = TrendStatus.CONSOLIDATION
     ma_alignment: str = ""           # 均线排列描述
     trend_strength: float = 0.0      # 趋势强度 0-100
+    ma_spread_pct: float = 0.0       # MA5 与 MA20 的距离百分比，正值偏多
+    ma20_slope_pct: float = 0.0      # MA20 近5日斜率百分比
+    price_return_20d: float = 0.0    # 近20日收盘收益率
     
     # 均线数据
     ma5: float = 0.0
@@ -112,10 +115,16 @@ class TrendAnalysisResult:
     resistance_levels: List[float] = field(default_factory=list)
     support_levels: List[float] = field(default_factory=list)
 
+    # 波动率
+    atr14: float = 0.0               # 14日平均真实波幅
+    atr_pct: float = 0.0             # ATR / 当前价格 * 100
+    volatility_status: str = ""      # 波动率状态描述
+
     # MACD 指标
     macd_dif: float = 0.0          # DIF 快线
     macd_dea: float = 0.0          # DEA 慢线
     macd_bar: float = 0.0           # MACD 柱状图
+    macd_momentum: float = 0.0       # MACD 柱体变化，正值代表动能增强
     macd_status: MACDStatus = MACDStatus.BULLISH
     macd_signal: str = ""            # MACD 信号描述
 
@@ -138,6 +147,9 @@ class TrendAnalysisResult:
             'trend_status': self.trend_status.value,
             'ma_alignment': self.ma_alignment,
             'trend_strength': self.trend_strength,
+            'ma_spread_pct': self.ma_spread_pct,
+            'ma20_slope_pct': self.ma20_slope_pct,
+            'price_return_20d': self.price_return_20d,
             'ma5': self.ma5,
             'ma10': self.ma10,
             'ma20': self.ma20,
@@ -151,6 +163,9 @@ class TrendAnalysisResult:
             'volume_trend': self.volume_trend,
             'support_ma5': self.support_ma5,
             'support_ma10': self.support_ma10,
+            'atr14': self.atr14,
+            'atr_pct': self.atr_pct,
+            'volatility_status': self.volatility_status,
             'buy_signal': self.buy_signal.value,
             'signal_score': self.signal_score,
             'signal_reasons': self.signal_reasons,
@@ -158,6 +173,7 @@ class TrendAnalysisResult:
             'macd_dif': self.macd_dif,
             'macd_dea': self.macd_dea,
             'macd_bar': self.macd_bar,
+            'macd_momentum': self.macd_momentum,
             'macd_status': self.macd_status.value,
             'macd_signal': self.macd_signal,
             'rsi_6': self.rsi_6,
@@ -185,6 +201,7 @@ class StockTrendAnalyzer:
     VOLUME_SHRINK_RATIO = 0.7   # 缩量判断阈值（当日量/5日均量）
     VOLUME_HEAVY_RATIO = 1.5    # 放量判断阈值
     MA_SUPPORT_TOLERANCE = 0.02  # MA 支撑判断容忍度（2%）
+    ATR_PERIOD = 14              # ATR 波动率周期
 
     # MACD 参数（标准12/26/9）
     MACD_FAST = 12              # 快线周期
@@ -229,6 +246,7 @@ class StockTrendAnalyzer:
         # 计算 MACD 和 RSI
         df = self._calculate_macd(df)
         df = self._calculate_rsi(df)
+        df = self._calculate_atr(df)
 
         # 获取最新数据
         latest = df.iloc[-1]
@@ -336,6 +354,27 @@ class StockTrendAnalyzer:
             df[col_name] = rsi
 
         return df
+
+    def _calculate_atr(self, df: pd.DataFrame) -> pd.DataFrame:
+        """计算 ATR(14)，用于把支撑容忍度和风险判断调整到个股自身波动水平。"""
+        df = df.copy()
+        if 'high' not in df.columns:
+            df['high'] = df['close']
+        if 'low' not in df.columns:
+            df['low'] = df['close']
+
+        prev_close = df['close'].shift(1)
+        true_range = pd.concat(
+            [
+                df['high'] - df['low'],
+                (df['high'] - prev_close).abs(),
+                (df['low'] - prev_close).abs(),
+            ],
+            axis=1,
+        ).max(axis=1)
+        df['ATR14'] = true_range.rolling(window=self.ATR_PERIOD, min_periods=1).mean()
+
+        return df
     
     def _analyze_trend(self, df: pd.DataFrame, result: TrendAnalysisResult) -> None:
         """
@@ -344,51 +383,106 @@ class StockTrendAnalyzer:
         核心逻辑：判断均线排列和趋势强度
         """
         ma5, ma10, ma20 = result.ma5, result.ma10, result.ma20
+        prev = df.iloc[-5] if len(df) >= 5 else df.iloc[-1]
+        prev_spread = (prev['MA5'] - prev['MA20']) / prev['MA20'] * 100 if prev['MA20'] > 0 else 0
+        curr_spread = (ma5 - ma20) / ma20 * 100 if ma20 > 0 else 0
+        result.ma_spread_pct = curr_spread
         
         # 判断均线排列
         if ma5 > ma10 > ma20:
-            # 检查间距是否在扩大（强势）
-            prev = df.iloc[-5] if len(df) >= 5 else df.iloc[-1]
-            prev_spread = (prev['MA5'] - prev['MA20']) / prev['MA20'] * 100 if prev['MA20'] > 0 else 0
-            curr_spread = (ma5 - ma20) / ma20 * 100 if ma20 > 0 else 0
-            
             if curr_spread > prev_spread and curr_spread > 5:
                 result.trend_status = TrendStatus.STRONG_BULL
                 result.ma_alignment = "强势多头排列，均线发散上行"
-                result.trend_strength = 90
             else:
                 result.trend_status = TrendStatus.BULL
                 result.ma_alignment = "多头排列 MA5>MA10>MA20"
-                result.trend_strength = 75
                 
         elif ma5 > ma10 and ma10 <= ma20:
             result.trend_status = TrendStatus.WEAK_BULL
             result.ma_alignment = "弱势多头，MA5>MA10 但 MA10≤MA20"
-            result.trend_strength = 55
             
         elif ma5 < ma10 < ma20:
-            prev = df.iloc[-5] if len(df) >= 5 else df.iloc[-1]
-            prev_spread = (prev['MA20'] - prev['MA5']) / prev['MA5'] * 100 if prev['MA5'] > 0 else 0
-            curr_spread = (ma20 - ma5) / ma5 * 100 if ma5 > 0 else 0
+            prev_bear_spread = (prev['MA20'] - prev['MA5']) / prev['MA5'] * 100 if prev['MA5'] > 0 else 0
+            curr_bear_spread = (ma20 - ma5) / ma5 * 100 if ma5 > 0 else 0
             
-            if curr_spread > prev_spread and curr_spread > 5:
+            if curr_bear_spread > prev_bear_spread and curr_bear_spread > 5:
                 result.trend_status = TrendStatus.STRONG_BEAR
                 result.ma_alignment = "强势空头排列，均线发散下行"
-                result.trend_strength = 10
             else:
                 result.trend_status = TrendStatus.BEAR
                 result.ma_alignment = "空头排列 MA5<MA10<MA20"
-                result.trend_strength = 25
                 
         elif ma5 < ma10 and ma10 >= ma20:
             result.trend_status = TrendStatus.WEAK_BEAR
             result.ma_alignment = "弱势空头，MA5<MA10 但 MA10≥MA20"
-            result.trend_strength = 40
             
         else:
             result.trend_status = TrendStatus.CONSOLIDATION
             result.ma_alignment = "均线缠绕，趋势不明"
-            result.trend_strength = 50
+
+        result.trend_strength = self._calculate_trend_strength(df, result)
+
+    def _calculate_trend_strength(self, df: pd.DataFrame, result: TrendAnalysisResult) -> float:
+        """用均线扩散、MA20斜率和20日收益率动态计算趋势强度。"""
+        latest = df.iloc[-1]
+        ma20_now = float(latest['MA20']) if latest['MA20'] == latest['MA20'] else 0.0
+        ma20_ref = df.iloc[-6]['MA20'] if len(df) >= 6 else ma20_now
+        if ma20_now > 0 and ma20_ref == ma20_ref and ma20_ref > 0:
+            result.ma20_slope_pct = (ma20_now - float(ma20_ref)) / float(ma20_ref) * 100
+
+        if len(df) >= 21:
+            ref_close = float(df.iloc[-21]['close'])
+            if ref_close > 0:
+                result.price_return_20d = (result.current_price - ref_close) / ref_close * 100
+
+        base_scores = {
+            TrendStatus.STRONG_BULL: 78,
+            TrendStatus.BULL: 68,
+            TrendStatus.WEAK_BULL: 54,
+            TrendStatus.CONSOLIDATION: 48,
+            TrendStatus.WEAK_BEAR: 42,
+            TrendStatus.BEAR: 30,
+            TrendStatus.STRONG_BEAR: 18,
+        }
+        score = base_scores.get(result.trend_status, 48)
+
+        spread = result.ma_spread_pct
+        slope = result.ma20_slope_pct
+        return_20d = result.price_return_20d
+
+        if result.trend_status in [TrendStatus.STRONG_BULL, TrendStatus.BULL, TrendStatus.WEAK_BULL]:
+            score += min(max(spread, 0) * 1.4, 10)
+            score += min(max(slope, 0) * 2.0, 8)
+            score += min(max(return_20d, 0) * 0.35, 8)
+            score -= min(max(-return_20d, 0) * 0.4, 8)
+        elif result.trend_status in [TrendStatus.STRONG_BEAR, TrendStatus.BEAR, TrendStatus.WEAK_BEAR]:
+            score -= min(max(-spread, 0) * 1.4, 10)
+            score -= min(max(-slope, 0) * 2.0, 8)
+            score -= min(max(-return_20d, 0) * 0.35, 8)
+            score += min(max(return_20d, 0) * 0.25, 6)
+        else:
+            score += max(min(return_20d * 0.25, 6), -6)
+            score += max(min(slope * 1.5, 5), -5)
+
+        return round(max(0.0, min(100.0, score)), 1)
+
+    def _trend_score_from_strength(self, result: TrendAnalysisResult) -> int:
+        """Map dynamic trend strength into the 30-point signal component."""
+        strength = result.trend_strength
+        if strength != strength or strength is None:
+            strength = 50.0
+        raw_score = round(float(strength) / 100 * 30)
+        bounds = {
+            TrendStatus.STRONG_BULL: (24, 30),
+            TrendStatus.BULL: (20, 28),
+            TrendStatus.WEAK_BULL: (14, 22),
+            TrendStatus.CONSOLIDATION: (8, 16),
+            TrendStatus.WEAK_BEAR: (5, 13),
+            TrendStatus.BEAR: (1, 9),
+            TrendStatus.STRONG_BEAR: (0, 5),
+        }
+        low, high = bounds.get(result.trend_status, (8, 16))
+        return int(max(low, min(high, raw_score)))
     
     def _calculate_bias(self, result: TrendAnalysisResult) -> None:
         """
@@ -452,18 +546,29 @@ class StockTrendAnalyzer:
         买点偏好：回踩 MA5/MA10 获得支撑
         """
         price = result.current_price
-        
+        latest = df.iloc[-1]
+        low = float(latest.get('low', price))
+        result.atr14 = float(latest.get('ATR14', 0) or 0)
+        if price > 0 and result.atr14 > 0:
+            result.atr_pct = result.atr14 / price * 100
+            if result.atr_pct >= 6:
+                result.volatility_status = "高波动"
+            elif result.atr_pct >= 3:
+                result.volatility_status = "中等波动"
+            else:
+                result.volatility_status = "低波动"
+
+        adaptive_tolerance = self._adaptive_support_tolerance(result)
+
         # 检查是否在 MA5 附近获得支撑
         if result.ma5 > 0:
-            ma5_distance = abs(price - result.ma5) / result.ma5
-            if ma5_distance <= self.MA_SUPPORT_TOLERANCE and price >= result.ma5:
+            if self._has_ma_support(price, low, result.ma5, adaptive_tolerance):
                 result.support_ma5 = True
                 result.support_levels.append(result.ma5)
         
         # 检查是否在 MA10 附近获得支撑
         if result.ma10 > 0:
-            ma10_distance = abs(price - result.ma10) / result.ma10
-            if ma10_distance <= self.MA_SUPPORT_TOLERANCE and price >= result.ma10:
+            if self._has_ma_support(price, low, result.ma10, adaptive_tolerance):
                 result.support_ma10 = True
                 if result.ma10 not in result.support_levels:
                     result.support_levels.append(result.ma10)
@@ -477,6 +582,19 @@ class StockTrendAnalyzer:
             recent_high = df['high'].iloc[-20:].max()
             if recent_high > price:
                 result.resistance_levels.append(recent_high)
+
+    def _adaptive_support_tolerance(self, result: TrendAnalysisResult) -> float:
+        """Return MA support tolerance adjusted by ATR, bounded to avoid overfitting."""
+        if result.atr_pct <= 0:
+            return self.MA_SUPPORT_TOLERANCE
+        atr_tolerance = result.atr_pct / 100 * 0.75
+        return max(self.MA_SUPPORT_TOLERANCE, min(0.05, atr_tolerance))
+
+    @staticmethod
+    def _has_ma_support(price: float, low: float, ma_value: float, tolerance: float) -> bool:
+        touched_ma_zone = low <= ma_value * (1 + tolerance)
+        closed_near_or_above_ma = price >= ma_value * (1 - tolerance / 2)
+        return touched_ma_zone and closed_near_or_above_ma
 
     def _analyze_macd(self, df: pd.DataFrame, result: TrendAnalysisResult) -> None:
         """
@@ -498,6 +616,7 @@ class StockTrendAnalyzer:
         result.macd_dif = float(latest['MACD_DIF'])
         result.macd_dea = float(latest['MACD_DEA'])
         result.macd_bar = float(latest['MACD_BAR'])
+        result.macd_momentum = float(latest['MACD_BAR'] - prev['MACD_BAR'])
 
         # 判断金叉死叉
         prev_dif_dea = prev['MACD_DIF'] - prev['MACD_DEA']
@@ -598,16 +717,7 @@ class StockTrendAnalyzer:
         risks = []
 
         # === 趋势评分（30分）===
-        trend_scores = {
-            TrendStatus.STRONG_BULL: 30,
-            TrendStatus.BULL: 26,
-            TrendStatus.WEAK_BULL: 18,
-            TrendStatus.CONSOLIDATION: 12,
-            TrendStatus.WEAK_BEAR: 8,
-            TrendStatus.BEAR: 4,
-            TrendStatus.STRONG_BEAR: 0,
-        }
-        trend_score = trend_scores.get(result.trend_status, 12)
+        trend_score = self._trend_score_from_strength(result)
         score += trend_score
 
         if result.trend_status in [TrendStatus.STRONG_BULL, TrendStatus.BULL]:
@@ -698,6 +808,18 @@ class StockTrendAnalyzer:
             MACDStatus.DEATH_CROSS: 0,        # 死叉
         }
         macd_score = macd_scores.get(result.macd_status, 5)
+        if result.macd_bar > 0 and result.macd_momentum > 0:
+            macd_score = min(15, macd_score + 2)
+            reasons.append("✅ MACD红柱放大，多头动能增强")
+        elif result.macd_bar > 0 and result.macd_momentum < 0:
+            macd_score = max(0, macd_score - 2)
+            risks.append("⚠️ MACD红柱收缩，多头动能减弱")
+        elif result.macd_bar < 0 and result.macd_momentum < 0:
+            macd_score = max(0, macd_score - 2)
+            risks.append("⚠️ MACD绿柱放大，空头动能增强")
+        elif result.macd_bar < 0 and result.macd_momentum > 0:
+            macd_score = min(15, macd_score + 2)
+            reasons.append("⚡ MACD绿柱收敛，空头动能减弱")
         score += macd_score
 
         if result.macd_status in [MACDStatus.GOLDEN_CROSS_ZERO, MACDStatus.GOLDEN_CROSS]:
@@ -716,6 +838,12 @@ class StockTrendAnalyzer:
             RSIStatus.OVERBOUGHT: 0,       # 超买最差
         }
         rsi_score = rsi_scores.get(result.rsi_status, 5)
+        if result.rsi_status == RSIStatus.OVERSOLD and result.trend_status in [
+            TrendStatus.BEAR,
+            TrendStatus.STRONG_BEAR,
+        ]:
+            rsi_score = 4
+            risks.append("⚠️ 空头趋势中的RSI超卖，可能是下跌中继")
         score += rsi_score
 
         if result.rsi_status in [RSIStatus.OVERSOLD, RSIStatus.STRONG_BUY]:
@@ -760,6 +888,7 @@ class StockTrendAnalyzer:
             f"📊 趋势判断: {result.trend_status.value}",
             f"   均线排列: {result.ma_alignment}",
             f"   趋势强度: {result.trend_strength}/100",
+            f"   均线扩散: {result.ma_spread_pct:+.2f}% | MA20斜率: {result.ma20_slope_pct:+.2f}% | 20日涨跌: {result.price_return_20d:+.2f}%",
             f"",
             f"📈 均线数据:",
             f"   现价: {result.current_price:.2f}",
@@ -770,11 +899,13 @@ class StockTrendAnalyzer:
             f"📊 量能分析: {result.volume_status.value}",
             f"   量比(vs5日): {result.volume_ratio_5d:.2f}",
             f"   量能趋势: {result.volume_trend}",
+            f"   ATR14: {result.atr14:.2f} ({result.atr_pct:.2f}%, {result.volatility_status or '未知波动'})",
             f"",
             f"📈 MACD指标: {result.macd_status.value}",
             f"   DIF: {result.macd_dif:.4f}",
             f"   DEA: {result.macd_dea:.4f}",
             f"   MACD: {result.macd_bar:.4f}",
+            f"   MACD动能: {result.macd_momentum:+.4f}",
             f"   信号: {result.macd_signal}",
             f"",
             f"📊 RSI指标: {result.rsi_status.value}",
